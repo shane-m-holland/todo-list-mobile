@@ -1,0 +1,347 @@
+openapi: 3.1.0
+info:
+  title: ToDo API
+  version: 1.0.0
+  summary: CRUD API for a single list of todo items.
+  description: |
+    Source-of-truth contract for the todo-list-mobile sandbox. The WireMock mock,
+    the Spring Boot backend, and the Android and iOS clients are all generated
+    from or validated against this document.
+
+    Errors are returned as RFC 9457 Problem Details (`application/problem+json`).
+  contact:
+    name: todo-list-mobile maintainers
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local (WireMock mock or Spring Boot backend)
+
+tags:
+  - name: todos
+    description: Todo items in the user's single list.
+
+paths:
+  /todos:
+    get:
+      tags: [todos]
+      operationId: listTodos
+      summary: List todos
+      description: Returns every todo, ordered by `createdAt` ascending.
+      responses:
+        '200':
+          description: All todos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Todo'
+              examples:
+                twoTodos:
+                  $ref: '#/components/examples/TodoList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [todos]
+      operationId: createTodo
+      summary: Create a todo
+      description: Creates a new, not-yet-completed todo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTodo'
+            examples:
+              groceries:
+                $ref: '#/components/examples/CreateTodo'
+      responses:
+        '201':
+          description: The created todo.
+          headers:
+            Location:
+              description: URL of the created todo.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+              examples:
+                created:
+                  $ref: '#/components/examples/Todo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /todos/{todoId}:
+    parameters:
+      - $ref: '#/components/parameters/TodoId'
+    get:
+      tags: [todos]
+      operationId: getTodo
+      summary: Get a todo
+      description: Returns a single todo by id.
+      responses:
+        '200':
+          description: The todo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+              examples:
+                found:
+                  $ref: '#/components/examples/Todo'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      tags: [todos]
+      operationId: updateTodo
+      summary: Update a todo
+      description: |
+        Partially updates a todo. Fields that are absent are left unchanged.
+        At least one field must be present.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTodo'
+            examples:
+              complete:
+                $ref: '#/components/examples/CompleteTodo'
+      responses:
+        '200':
+          description: The updated todo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+              examples:
+                completed:
+                  $ref: '#/components/examples/CompletedTodo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [todos]
+      operationId: deleteTodo
+      summary: Delete a todo
+      description: Permanently deletes a todo.
+      responses:
+        '204':
+          description: Deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  parameters:
+    TodoId:
+      name: todoId
+      in: path
+      required: true
+      description: Todo identifier.
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    Todo:
+      type: object
+      required: [id, title, completed, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          $ref: '#/components/schemas/Title'
+        notes:
+          $ref: '#/components/schemas/Notes'
+        completed:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    CreateTodo:
+      type: object
+      required: [title]
+      additionalProperties: false
+      properties:
+        title:
+          $ref: '#/components/schemas/Title'
+        notes:
+          $ref: '#/components/schemas/Notes'
+
+    UpdateTodo:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        title:
+          $ref: '#/components/schemas/Title'
+        notes:
+          $ref: '#/components/schemas/Notes'
+        completed:
+          type: boolean
+
+    Title:
+      type: string
+      minLength: 1
+      maxLength: 200
+      pattern: '\S'
+      description: Short summary of the todo. Must contain at least one non-whitespace character.
+
+    Notes:
+      type: string
+      maxLength: 2000
+      description: Optional free-form details.
+
+    ProblemDetails:
+      type: object
+      description: RFC 9457 Problem Details.
+      required: [title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 100
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        errors:
+          type: array
+          description: Field-level validation errors, present on 400 responses.
+          items:
+            $ref: '#/components/schemas/FieldError'
+
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: JSON pointer-ish path of the offending field, e.g. `title`.
+        message:
+          type: string
+
+  responses:
+    BadRequest:
+      description: The request was malformed or failed validation.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            blankTitle:
+              $ref: '#/components/examples/ValidationProblem'
+    NotFound:
+      description: No todo exists with the given id.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            notFound:
+              $ref: '#/components/examples/NotFoundProblem'
+    InternalError:
+      description: Unexpected server error.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            internal:
+              $ref: '#/components/examples/InternalProblem'
+
+  examples:
+    CreateTodo:
+      summary: New todo
+      value:
+        title: Buy groceries
+        notes: Milk, eggs, coffee
+    CompleteTodo:
+      summary: Mark as completed
+      value:
+        completed: true
+    Todo:
+      summary: Open todo
+      value:
+        id: 3f9c2a4e-8b1d-4c6e-9a7f-2d5e8b1c4a90
+        title: Buy groceries
+        notes: Milk, eggs, coffee
+        completed: false
+        createdAt: '2026-10-20T14:00:00Z'
+        updatedAt: '2026-10-20T14:00:00Z'
+    CompletedTodo:
+      summary: Completed todo
+      value:
+        id: 3f9c2a4e-8b1d-4c6e-9a7f-2d5e8b1c4a90
+        title: Buy groceries
+        notes: Milk, eggs, coffee
+        completed: true
+        createdAt: '2026-10-20T14:00:00Z'
+        updatedAt: '2026-10-20T15:30:00Z'
+    TodoList:
+      summary: Two todos
+      value:
+        - id: 3f9c2a4e-8b1d-4c6e-9a7f-2d5e8b1c4a90
+          title: Buy groceries
+          notes: Milk, eggs, coffee
+          completed: false
+          createdAt: '2026-10-20T14:00:00Z'
+          updatedAt: '2026-10-20T14:00:00Z'
+        - id: 7a1b3c5d-2e4f-4a6b-8c9d-0e1f2a3b4c5d
+          title: Renew passport
+          completed: true
+          createdAt: '2026-10-19T09:15:00Z'
+          updatedAt: '2026-10-20T08:00:00Z'
+    ValidationProblem:
+      summary: Blank title
+      value:
+        type: about:blank
+        title: Bad Request
+        status: 400
+        detail: Request body failed validation.
+        errors:
+          - field: title
+            message: must not be blank
+    NotFoundProblem:
+      summary: Unknown id
+      value:
+        type: about:blank
+        title: Not Found
+        status: 404
+        detail: Todo 00000000-0000-0000-0000-000000000000 does not exist.
+    InternalProblem:
+      summary: Server error
+      value:
+        type: about:blank
+        title: Internal Server Error
+        status: 500
