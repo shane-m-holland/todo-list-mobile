@@ -1,0 +1,27 @@
+# OS / IDE
+.DS_Store
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Gradle / Kotlin / Android
+.gradle/
+build/
+.kotlin/
+local.properties
+captures/
+*.apk
+*.aab
+.externalNativeBuild/
+.cxx/
+
+# Xcode / Swift
+DerivedData/
+xcuserdata/
+*.xcuserstate
+.build/
+.swiftpm/
+
+# Node tooling (contract linting, if run locally)
+node_modules/
