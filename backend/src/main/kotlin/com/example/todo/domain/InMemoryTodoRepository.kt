@@ -1,9 +1,12 @@
 package com.example.todo.domain
 
 import java.util.UUID
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Repository
 
+/** Default storage (profile `memory`): nothing to set up, everything is lost on restart. */
 @Repository
+@Profile("memory")
 class InMemoryTodoRepository : TodoRepository {
     // LinkedHashMap keeps insertion order, which is creation order. All access goes through `lock`.
     private val todos = LinkedHashMap<UUID, Todo>()

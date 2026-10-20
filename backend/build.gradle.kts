@@ -63,12 +63,19 @@ dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.jdbc)
+    implementation(libs.flyway.core)
+    runtimeOnly(libs.flyway.database.postgresql)
+    runtimeOnly(libs.postgresql)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.kotlin.reflect)
 
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(kotlin("test-junit5"))
     testImplementation(libs.swagger.request.validator.mockmvc)
+    testImplementation(libs.spring.boot.testcontainers)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

@@ -3,7 +3,6 @@ package com.example.todo.web
 import com.atlassian.oai.validator.OpenApiInteractionValidator
 import com.atlassian.oai.validator.whitelist.ValidationErrorsWhitelist
 import com.atlassian.oai.validator.mockmvc.OpenApiValidationMatchers.openApi
-import com.example.todo.domain.InMemoryTodoRepository
 import java.io.File
 import org.hamcrest.Matchers.endsWith
 import org.hamcrest.Matchers.hasSize
@@ -11,8 +10,6 @@ import org.hamcrest.Matchers.matchesPattern
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultActions
@@ -29,13 +26,15 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 /**
  * Drives the real HTTP stack and checks every request and response against contract/openapi.yaml,
  * so the server cannot drift from the contract the clients and the mock are built on.
+ *
+ * Runs once per storage backend: see [TodosApiContractMemoryTest] and [TodosApiContractPostgresTest].
  */
-@SpringBootTest(properties = ["todo.seed.enabled=false"])
-@AutoConfigureMockMvc
-class TodosApiContractTest {
+abstract class AbstractTodosApiContractTest {
 
     @Autowired lateinit var mvc: MockMvc
-    @Autowired lateinit var repository: InMemoryTodoRepository
+
+    /** Empties the store the application under test uses. */
+    abstract fun resetStore()
 
     /** Request and response both conform to the contract. */
     private val matchesContract = openApi().isValid(contractValidator)
@@ -64,7 +63,7 @@ class TodosApiContractTest {
     }
 
     @BeforeEach
-    fun reset() = repository.clear()
+    fun reset() = resetStore()
 
     private fun createTodo(body: String): ResultActions =
         mvc.perform(post("/api/v1/todos").contentType(MediaType.APPLICATION_JSON).content(body))

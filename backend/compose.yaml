@@ -1,0 +1,19 @@
+# Local PostgreSQL for `make backend-run-postgres`. Data lives in a named volume, so it survives
+# `make db-down`; `make db-reset` deletes it. Host port 5433 avoids clashing with a Postgres on 5432.
+name: todo-db
+
+services:
+  postgres:
+    image: docker.io/library/postgres:17-alpine
+    container_name: todo-db
+    environment:
+      POSTGRES_DB: todo
+      POSTGRES_USER: todo
+      POSTGRES_PASSWORD: todo # local development only
+    ports:
+      - "5433:5432"
+    volumes:
+      - todo-db-data:/var/lib/postgresql/data
+
+volumes:
+  todo-db-data:

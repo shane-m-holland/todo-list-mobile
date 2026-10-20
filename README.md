@@ -7,7 +7,7 @@ Proof-of-concept sandbox for trying out development and workflow techniques with
 | API contract | `contract/` | OpenAPI 3.1 | Done |
 | Mock API | `mock/` | WireMock (container) | Done |
 | Android client | `android/` | Kotlin, Compose, Retrofit, Hilt | MVP done (mock backend) |
-| Backend API | `backend/` | Kotlin, Spring Boot 3 | Done (in-memory storage) |
+| Backend API | `backend/` | Kotlin, Spring Boot 3, PostgreSQL | Done (in-memory or Postgres) |
 | iOS client | `ios/` | Swift, SwiftUI | Planned |
 
 The contract is the source of truth. Client and server code is generated from `contract/openapi.yaml`.
@@ -44,6 +44,10 @@ See [mock/README.md](mock/README.md) for the mock's targets (reset, smoke test, 
 make backend-run
 ```
 
+```bash
+make backend-run-postgres
+```
+
 See [backend/README.md](backend/README.md) for how it's generated from the contract and tested.
 
 ```bash
@@ -65,6 +69,6 @@ See [android/README.md](android/README.md) for the Android project layout.
 3. **CP2** WireMock mock API ✅
 4. **CP3** Android skeleton + generated client ✅
 5. **CP4** Android UI (MVP complete) ✅
-6. **CP5** Spring Boot backend ✅ (in-memory; Postgres next)
+6. **CP5** Spring Boot backend ✅ (in-memory and PostgreSQL)
 7. **CP6** iOS client
 8. **CP7** CI and contract breaking-change checks

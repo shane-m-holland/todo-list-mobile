@@ -1,6 +1,9 @@
 spring:
   application:
     name: todo-backend
+  profiles:
+    # `memory` needs nothing but a JVM. Run with SPRING_PROFILES_ACTIVE=postgres for persistence.
+    default: memory
   jackson:
     default-property-inclusion: non_null # absent notes are omitted, never null
     deserialization:
@@ -17,4 +20,5 @@ management:
 
 todo:
   seed:
-    enabled: true # sample todos at startup, same as `make mock-reset`
+    # Sample todos at startup, only into an empty store (same data as `make mock-reset`).
+    enabled: ${TODO_SEED_ENABLED:true}

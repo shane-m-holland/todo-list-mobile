@@ -1,0 +1,11 @@
+# PostgreSQL storage. Flyway migrates the schema at startup. Defaults match `make db-up`.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/todo}
+    username: ${DB_USER:todo}
+    password: ${DB_PASSWORD:todo}
+
+todo:
+  seed:
+    # A persistent database keeps its data between runs. Opt in to sample data for an empty one.
+    enabled: ${TODO_SEED_ENABLED:false}

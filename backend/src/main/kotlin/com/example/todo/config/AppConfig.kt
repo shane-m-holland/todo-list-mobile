@@ -24,10 +24,11 @@ class AppConfig : WebMvcConfigurer {
     @Bean
     fun clock(): Clock = Clock.systemUTC()
 
-    /** Same sample data as the WireMock mock's seed script. */
+    /** Same sample data as the WireMock mock's seed script, added only to an empty store. */
     @Bean
     @ConditionalOnProperty("todo.seed.enabled", havingValue = "true")
     fun seedTodos(service: TodoService) = ApplicationRunner {
+        if (service.list().isNotEmpty()) return@ApplicationRunner
         service.create("Buy groceries", "Milk, eggs, coffee")
         service.create("Book dentist appointment", null)
         val passport = service.create("Renew passport", "Photos are in the desk drawer")

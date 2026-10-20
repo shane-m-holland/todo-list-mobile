@@ -18,7 +18,7 @@ BACKEND_URL  ?= http://localhost:$(BACKEND_PORT)
 .PHONY: help
 help: ## List available targets
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 
 # --- Contract ----------------------------------------------------------------
 
@@ -110,14 +110,28 @@ android-install: ## Install and launch the debug app on the running emulator (AN
 
 # --- Backend (Spring Boot) ---------------------------------------------------
 
-BACKEND_GRADLE := cd backend && JAVA_HOME=$(JDK21_HOME) ./gradlew --console=plain
+# Testcontainers talks to the container runtime over its socket. Podman's isn't at the Docker
+# default, so point DOCKER_HOST at it unless the caller already did. Ryuk (the cleanup sidecar)
+# needs privileges rootless Podman doesn't give it; the tests stop their own containers.
+TC_SOCKET = $(shell $(CONTAINER) machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}' 2>/dev/null)
+TC_ENV    = $(if $(DOCKER_HOST),,$(if $(TC_SOCKET),DOCKER_HOST=unix://$(TC_SOCKET) TESTCONTAINERS_RYUK_DISABLED=true))
+
+# BACKEND_ENV lets a target add environment variables (see backend-run-postgres).
+BACKEND_ENV    =
+BACKEND_GRADLE = cd backend && $(BACKEND_ENV) $(TC_ENV) JAVA_HOME=$(JDK21_HOME) ./gradlew --console=plain
+DB_COMPOSE     := $(CONTAINER) compose -f backend/compose.yaml
 
 .PHONY: backend-run
-backend-run: ## Run the Spring Boot backend on :8081 (in-memory, seeded)
+backend-run: ## Run the Spring Boot backend on :8081 with in-memory storage (seeded)
+	$(BACKEND_GRADLE) bootRun
+
+.PHONY: backend-run-postgres
+backend-run-postgres: BACKEND_ENV = SPRING_PROFILES_ACTIVE=postgres
+backend-run-postgres: db-up ## Run the backend on :8081 against the local Postgres (TODO_SEED_ENABLED=true to seed an empty DB)
 	$(BACKEND_GRADLE) bootRun
 
 .PHONY: backend-test
-backend-test: ## Run backend tests (responses are validated against the contract)
+backend-test: ## Run backend tests: in-memory, plus Postgres via Testcontainers when a container runtime is up
 	$(BACKEND_GRADLE) test
 
 .PHONY: backend-build
@@ -127,3 +141,17 @@ backend-build: ## Build the executable jar (backend/build/libs)
 .PHONY: backend-smoke
 backend-smoke: ## Run the CRUD smoke test against a running backend
 	@BASE_URL=$(BACKEND_URL)/api/v1 scripts/smoke.sh
+
+.PHONY: db-up
+db-up: ## Start the local PostgreSQL container on :5433
+	$(DB_COMPOSE) up -d
+	@printf "Waiting for PostgreSQL"; for i in $$(seq 1 30); do \
+		$(CONTAINER) exec todo-db pg_isready -U todo -d todo -q >/dev/null 2>&1 && break; printf "."; sleep 1; done; echo
+
+.PHONY: db-down
+db-down: ## Stop the local PostgreSQL container (data is kept)
+	$(DB_COMPOSE) down
+
+.PHONY: db-reset
+db-reset: ## Stop PostgreSQL and delete its data volume
+	$(DB_COMPOSE) down -v
