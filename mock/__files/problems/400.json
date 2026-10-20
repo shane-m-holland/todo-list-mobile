@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "Request body failed validation against the contract.",
+  "instance": "{{request.path}}"
+}

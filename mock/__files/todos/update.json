@@ -1,0 +1,12 @@
+{{#assign 'id'}}{{request.path.todoId}}{{/assign~}}
+{{#assign 'title'}}{{{jsonPath request.body '$.title' default=(state context=id property='title')}}}{{/assign~}}
+{{#assign 'notes'}}{{{jsonPath request.body '$.notes' default=(state context=id property='notes' default='')}}}{{/assign~}}
+{{#assign 'completed'}}{{jsonPath request.body '$.completed' default=(state context=id property='completed')}}{{/assign~}}
+{
+  "id": "{{id}}",
+  "title": {{{toJson title}}},
+  {{#if notes}}"notes": {{{toJson notes}}},
+  {{/if}}"completed": {{completed}},
+  "createdAt": "{{state context=id property='createdAt'}}",
+  "updatedAt": "{{now}}"
+}

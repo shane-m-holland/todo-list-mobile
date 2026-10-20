@@ -1,0 +1,26 @@
+{
+  "name": "Delete todo",
+  "priority": 5,
+  "request": {
+    "urlPathTemplate": "/api/v1/todos/{todoId}",
+    "method": "DELETE",
+    "customMatcher": {
+      "name": "state-matcher",
+      "parameters": { "hasContext": "{{request.path.todoId}}" }
+    }
+  },
+  "response": { "status": 204 },
+  "serveEventListeners": [
+    {
+      "name": "deleteState",
+      "parameters": { "context": "{{request.path.todoId}}" }
+    },
+    {
+      "name": "deleteState",
+      "parameters": {
+        "context": "todos",
+        "list": { "deleteWhere": { "property": "id", "value": "{{request.path.todoId}}" } }
+      }
+    }
+  ]
+}

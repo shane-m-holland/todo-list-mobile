@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Todo {{request.path.todoId}} does not exist.",
+  "instance": "{{request.path}}"
+}

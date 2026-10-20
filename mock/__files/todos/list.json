@@ -1,0 +1,3 @@
+[{{#each (state context='todos' property='list' default='[]')}}
+  {{{state context=id property='fullBody'}}}{{#unless @last}},{{/unless}}{{/each}}
+]

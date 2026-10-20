@@ -1,0 +1,10 @@
+{
+  "name": "Unknown todo id (any method)",
+  "priority": 9,
+  "request": { "urlPathTemplate": "/api/v1/todos/{todoId}", "method": "ANY" },
+  "response": {
+    "status": 404,
+    "headers": { "Content-Type": "application/problem+json" },
+    "bodyFileName": "problems/404.json"
+  }
+}

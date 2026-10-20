@@ -1,0 +1,21 @@
+{
+  "mappings": [
+    {
+      "name": "Get todo",
+      "priority": 5,
+      "request": {
+        "urlPathTemplate": "/api/v1/todos/{todoId}",
+        "method": "GET",
+        "customMatcher": {
+          "name": "state-matcher",
+          "parameters": { "hasContext": "{{request.path.todoId}}" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "bodyFileName": "todos/get.json"
+      }
+    }
+  ]
+}

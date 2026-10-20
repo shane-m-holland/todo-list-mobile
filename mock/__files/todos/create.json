@@ -1,0 +1,9 @@
+{{#assign 'now'}}{{now}}{{/assign~}}
+{
+  "id": "{{request.id}}",
+  "title": {{{toJson (jsonPath request.body '$.title')}}},
+  {{#with (jsonPath request.body '$.notes' default='')}}"notes": {{{toJson this}}},
+  {{/with}}"completed": false,
+  "createdAt": "{{now}}",
+  "updatedAt": "{{now}}"
+}

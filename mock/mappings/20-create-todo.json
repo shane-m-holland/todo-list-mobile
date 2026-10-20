@@ -1,0 +1,67 @@
+{
+  "mappings": [
+    {
+      "name": "Create todo (valid body)",
+      "priority": 5,
+      "request": {
+        "urlPath": "/api/v1/todos",
+        "method": "POST",
+        "bodyPatterns": [
+          {
+            "matchesJsonSchema": {
+              "type": "object",
+              "required": ["title"],
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "\\S" },
+                "notes": { "type": "string", "maxLength": 2000 }
+              }
+            },
+            "schemaVersion": "V202012"
+          }
+        ]
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json",
+          "Location": "/api/v1/todos/{{request.id}}"
+        },
+        "bodyFileName": "todos/create.json"
+      },
+      "serveEventListeners": [
+        {
+          "name": "recordState",
+          "parameters": {
+            "context": "{{jsonPath response.body '$.id'}}",
+            "state": {
+              "id": "{{jsonPath response.body '$.id'}}",
+              "title": "{{{jsonPath response.body '$.title'}}}",
+              "notes": "{{{jsonPath response.body '$.notes' default='null'}}}",
+              "completed": "{{jsonPath response.body '$.completed'}}",
+              "createdAt": "{{jsonPath response.body '$.createdAt'}}",
+              "fullBody": "{{{jsonPath response.body '$'}}}"
+            }
+          }
+        },
+        {
+          "name": "recordState",
+          "parameters": {
+            "context": "todos",
+            "list": { "addLast": { "id": "{{jsonPath response.body '$.id'}}" } }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create todo (invalid body)",
+      "priority": 7,
+      "request": { "urlPath": "/api/v1/todos", "method": "POST" },
+      "response": {
+        "status": 400,
+        "headers": { "Content-Type": "application/problem+json" },
+        "bodyFileName": "problems/400.json"
+      }
+    }
+  ]
+}

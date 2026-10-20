@@ -1,0 +1,17 @@
+name: todo-mock
+
+services:
+  wiremock:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: localhost/todo-mock-wiremock:latest
+    container_name: todo-mock
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./mappings:/home/wiremock/mappings:ro
+      - ./__files:/home/wiremock/__files:ro
+    command:
+      - --global-response-templating
+      - --disable-banner

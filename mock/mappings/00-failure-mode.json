@@ -1,0 +1,41 @@
+{
+  "mappings": [
+    {
+      "name": "Failure mode (toggled): every API call returns 500",
+      "priority": 1,
+      "scenarioName": "failure-mode",
+      "requiredScenarioState": "failing",
+      "request": {
+        "urlPathPattern": "/api/v1/.*",
+        "method": "ANY"
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "bodyFileName": "problems/500.json"
+      }
+    },
+    {
+      "name": "Failure mode (per request): X-Mock-Fail header returns 500",
+      "priority": 1,
+      "request": {
+        "urlPathPattern": "/api/v1/.*",
+        "method": "ANY",
+        "headers": {
+          "X-Mock-Fail": {
+            "matches": "(?i)true|1"
+          }
+        }
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "bodyFileName": "problems/500.json"
+      }
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "mappings": [
+    {
+      "name": "Update todo (valid body)",
+      "priority": 5,
+      "request": {
+        "urlPathTemplate": "/api/v1/todos/{todoId}",
+        "method": "PATCH",
+        "customMatcher": {
+          "name": "state-matcher",
+          "parameters": { "hasContext": "{{request.path.todoId}}" }
+        },
+        "bodyPatterns": [
+          {
+            "matchesJsonSchema": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "\\S" },
+                "notes": { "type": "string", "maxLength": 2000 },
+                "completed": { "type": "boolean" }
+              }
+            },
+            "schemaVersion": "V202012"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "bodyFileName": "todos/update.json"
+      },
+      "serveEventListeners": [
+        {
+          "name": "recordState",
+          "parameters": {
+            "context": "{{request.path.todoId}}",
+            "state": {
+              "title": "{{{jsonPath response.body '$.title'}}}",
+              "notes": "{{{jsonPath response.body '$.notes' default='null'}}}",
+              "completed": "{{jsonPath response.body '$.completed'}}",
+              "fullBody": "{{{jsonPath response.body '$'}}}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update todo (invalid body)",
+      "priority": 7,
+      "request": {
+        "urlPathTemplate": "/api/v1/todos/{todoId}",
+        "method": "PATCH",
+        "customMatcher": {
+          "name": "state-matcher",
+          "parameters": { "hasContext": "{{request.path.todoId}}" }
+        }
+      },
+      "response": {
+        "status": 400,
+        "headers": { "Content-Type": "application/problem+json" },
+        "bodyFileName": "problems/400.json"
+      }
+    }
+  ]
+}

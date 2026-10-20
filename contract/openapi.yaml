@@ -107,7 +107,8 @@ paths:
       summary: Update a todo
       description: |
         Partially updates a todo. Fields that are absent are left unchanged.
-        At least one field must be present.
+        At least one field must be present. Send `notes: ""` to clear notes;
+        todos without notes omit the `notes` property.
       requestBody:
         required: true
         content:

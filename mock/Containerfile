@@ -1,0 +1,9 @@
+# WireMock + the state extension, which makes CRUD stubs stateful.
+# The standalone jar is picked up from /var/wiremock/extensions via ServiceLoader.
+ARG WIREMOCK_VERSION=3.13.2
+FROM docker.io/wiremock/wiremock:${WIREMOCK_VERSION}
+
+ARG STATE_EXTENSION_VERSION=0.10.1
+ADD --checksum=sha256:8898a2700ca16f2d235fa42253e3f400cc08117f9190fdfe1686014c31619ae7 \
+    https://repo1.maven.org/maven2/org/wiremock/extensions/wiremock-state-extension-standalone/${STATE_EXTENSION_VERSION}/wiremock-state-extension-standalone-${STATE_EXTENSION_VERSION}.jar \
+    /var/wiremock/extensions/

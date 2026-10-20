@@ -6,6 +6,10 @@ REDOCLY_IMAGE  ?= docker.io/redocly/cli:latest
 
 CONTRACT := contract/openapi.yaml
 
+COMPOSE  ?= $(CONTAINER) compose -f mock/compose.yaml
+MOCK_URL ?= http://localhost:8080
+MOCK_DELAY_MS ?= 2000
+
 .DEFAULT_GOAL := help
 
 .PHONY: help
@@ -26,3 +30,48 @@ contract-docs: ## Render the contract to build/contract/index.html (Redoc)
 	$(CONTAINER) run --rm -v "$(CURDIR):/work" -w /work $(REDOCLY_IMAGE) \
 		build-docs $(CONTRACT) --output build/contract/index.html
 	@echo "Open build/contract/index.html"
+
+# --- Mock API (WireMock) -----------------------------------------------------
+
+.PHONY: mock-up
+mock-up: ## Build and start the WireMock mock on :8080, then seed it
+	$(COMPOSE) up -d --build
+	@printf "Waiting for WireMock"; for i in $$(seq 1 30); do \
+		curl -fsS $(MOCK_URL)/__admin/health >/dev/null 2>&1 && break; printf "."; sleep 1; done; echo
+	@MOCK_URL=$(MOCK_URL) mock/seed.sh
+
+.PHONY: mock-down
+mock-down: ## Stop and remove the mock container
+	$(COMPOSE) down
+
+.PHONY: mock-logs
+mock-logs: ## Follow mock container logs
+	$(COMPOSE) logs -f
+
+.PHONY: mock-reset
+mock-reset: ## Clear mock state and re-seed sample todos
+	@MOCK_URL=$(MOCK_URL) mock/seed.sh
+
+.PHONY: mock-smoke
+mock-smoke: ## Run the CRUD smoke test against the mock
+	@BASE_URL=$(MOCK_URL)/api/v1 mock/smoke.sh
+
+.PHONY: mock-fail-on
+mock-fail-on: ## Make every API call return 500
+	@curl -fsS -o /dev/null -X PUT $(MOCK_URL)/__admin/scenarios/failure-mode/state -d '{"state":"failing"}'
+	@echo "Failure mode ON: /api/v1/* returns 500"
+
+.PHONY: mock-fail-off
+mock-fail-off: ## Return to normal responses
+	@curl -fsS -o /dev/null -X PUT $(MOCK_URL)/__admin/scenarios/failure-mode/state
+	@echo "Failure mode OFF"
+
+.PHONY: mock-slow
+mock-slow: ## Add a global response delay (MOCK_DELAY_MS, default 2000)
+	@curl -fsS -o /dev/null -X POST $(MOCK_URL)/__admin/settings -d '{"fixedDelay":$(MOCK_DELAY_MS)}'
+	@echo "Responses delayed by $(MOCK_DELAY_MS) ms"
+
+.PHONY: mock-fast
+mock-fast: ## Remove the global response delay
+	@curl -fsS -o /dev/null -X POST $(MOCK_URL)/__admin/settings -d '{"fixedDelay":0}'
+	@echo "Response delay removed"

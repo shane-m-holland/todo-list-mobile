@@ -1,0 +1,9 @@
+{
+  "name": "List todos",
+  "request": { "urlPath": "/api/v1/todos", "method": "GET" },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "bodyFileName": "todos/list.json"
+  }
+}

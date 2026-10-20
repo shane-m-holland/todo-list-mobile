@@ -1,0 +1,1 @@
+{{{state context=request.path.todoId property='fullBody'}}}

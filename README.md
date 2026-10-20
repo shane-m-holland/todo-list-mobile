@@ -15,6 +15,7 @@ The contract is the source of truth. Client and server code is generated from `c
 ## Prerequisites
 
 - A container runtime. Podman is the default; pass `CONTAINER=docker` to use Docker.
+- `jq` for the mock smoke test.
 - JDK 21 for Gradle (Homebrew: `brew install openjdk@21`).
 - Android Studio and an emulator.
 - Xcode (later, for iOS).
@@ -32,6 +33,12 @@ make lint-contract
 ```bash
 make contract-docs
 ```
+
+```bash
+make mock-up
+```
+
+See [mock/README.md](mock/README.md) for the mock's targets (reset, smoke test, failure mode, delays).
 
 ## Roadmap
 
