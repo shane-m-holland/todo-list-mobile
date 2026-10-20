@@ -28,8 +28,9 @@ A single screen: `TodoListScreen` → `TodoListContent`. `TodoListContent` is st
 | Flavor | Base URL | Notes |
 |---|---|---|
 | `mock` | `http://10.0.2.2:8080/api/v1/` | WireMock on the host (`make mock-up`). App id suffix `.mock`. |
+| `local` | `http://10.0.2.2:8081/api/v1/` | Spring Boot backend on the host (`make backend-run`). App id suffix `.local`. |
 
-A `local` flavor (Spring Boot backend) comes with CP5. Cleartext HTTP is allowed only in debug builds, and only to `10.0.2.2` and `localhost` (see `src/debug/`).
+Both can be installed side by side. `make android-install ANDROID_FLAVOR=local` builds and launches the `local` one. Cleartext HTTP is allowed only in debug builds, and only to `10.0.2.2` and `localhost` (see `src/debug/`).
 
 ## Tests
 
@@ -39,4 +40,4 @@ A `local` flavor (Spring Boot backend) comes with CP5. Cleartext HTTP is allowed
 
 ## Running from Android Studio
 
-Open `android/`. Set **Settings → Build Tools → Gradle → Gradle JDK** to a JDK 21, pick the `mockDebug` build variant, and start the mock first with `make mock-up`.
+Open `android/`. Set **Settings → Build Tools → Gradle → Gradle JDK** to a JDK 21, pick the `mockDebug` or `localDebug` build variant, and start the matching server first (`make mock-up` or `make backend-run`).

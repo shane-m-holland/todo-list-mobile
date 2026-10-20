@@ -20,13 +20,19 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // Which API the app talks to. Add `local` (Spring Boot on the host) in CP5.
+    // Which API the app talks to. Both reach the host machine via the emulator's 10.0.2.2 alias.
     flavorDimensions += "backend"
     productFlavors {
         create("mock") {
             dimension = "backend"
             applicationIdSuffix = ".mock"
             buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
+        }
+        // The Spring Boot backend (`make backend-run`).
+        create("local") {
+            dimension = "backend"
+            applicationIdSuffix = ".local"
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8081/api/v1/\"")
         }
     }
 

@@ -10,6 +10,9 @@ COMPOSE  ?= $(CONTAINER) compose -f mock/compose.yaml
 MOCK_URL ?= http://localhost:8080
 MOCK_DELAY_MS ?= 2000
 
+BACKEND_PORT ?= 8081
+BACKEND_URL  ?= http://localhost:$(BACKEND_PORT)
+
 .DEFAULT_GOAL := help
 
 .PHONY: help
@@ -54,7 +57,7 @@ mock-reset: ## Clear mock state and re-seed sample todos
 
 .PHONY: mock-smoke
 mock-smoke: ## Run the CRUD smoke test against the mock
-	@BASE_URL=$(MOCK_URL)/api/v1 mock/smoke.sh
+	@BASE_URL=$(MOCK_URL)/api/v1 scripts/smoke.sh
 
 .PHONY: mock-fail-on
 mock-fail-on: ## Make every API call return 500
@@ -84,12 +87,16 @@ GRADLE := cd android && JAVA_HOME=$(JDK21_HOME) ./gradlew --console=plain
 ANDROID_SDK ?= $(or $(ANDROID_HOME),$(HOME)/Library/Android/sdk)
 ADB ?= $(ANDROID_SDK)/platform-tools/adb
 
+# Which backend the app talks to: mock (WireMock :8080) or local (Spring Boot :8081).
+ANDROID_FLAVOR ?= mock
+FLAVOR_TASK = $(shell echo $(ANDROID_FLAVOR) | awk '{print toupper(substr($$0,1,1)) substr($$0,2)}')
+
 .PHONY: android-build
-android-build: ## Assemble the mockDebug APK (regenerates the API client from the contract)
-	$(GRADLE) :app:assembleMockDebug
+android-build: ## Assemble the debug APK for ANDROID_FLAVOR=mock|local (regenerates the API client from the contract)
+	$(GRADLE) :app:assemble$(FLAVOR_TASK)Debug
 
 .PHONY: android-test
-android-test: ## Run Android unit tests (network module + app repository)
+android-test: ## Run Android unit tests (network module, repository, view model)
 	$(GRADLE) :core:network:test :app:testMockDebugUnitTest
 
 .PHONY: android-ui-test
@@ -97,6 +104,26 @@ android-ui-test: ## Run Compose UI tests on the running emulator
 	$(GRADLE) :app:connectedMockDebugAndroidTest
 
 .PHONY: android-install
-android-install: ## Install and launch mockDebug on the running emulator
-	$(GRADLE) :app:installMockDebug
-	$(ADB) shell am start -n com.example.todo.mock/com.example.todo.MainActivity
+android-install: ## Install and launch the debug app on the running emulator (ANDROID_FLAVOR=mock|local)
+	$(GRADLE) :app:install$(FLAVOR_TASK)Debug
+	$(ADB) shell am start -n com.example.todo.$(ANDROID_FLAVOR)/com.example.todo.MainActivity
+
+# --- Backend (Spring Boot) ---------------------------------------------------
+
+BACKEND_GRADLE := cd backend && JAVA_HOME=$(JDK21_HOME) ./gradlew --console=plain
+
+.PHONY: backend-run
+backend-run: ## Run the Spring Boot backend on :8081 (in-memory, seeded)
+	$(BACKEND_GRADLE) bootRun
+
+.PHONY: backend-test
+backend-test: ## Run backend tests (responses are validated against the contract)
+	$(BACKEND_GRADLE) test
+
+.PHONY: backend-build
+backend-build: ## Build the executable jar (backend/build/libs)
+	$(BACKEND_GRADLE) bootJar
+
+.PHONY: backend-smoke
+backend-smoke: ## Run the CRUD smoke test against a running backend
+	@BASE_URL=$(BACKEND_URL)/api/v1 scripts/smoke.sh

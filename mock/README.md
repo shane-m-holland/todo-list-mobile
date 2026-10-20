@@ -16,7 +16,7 @@ make mock-smoke
 |---|---|
 | `mock-up` / `mock-down` | Build and start the mock (with seeding) / stop it |
 | `mock-reset` | Clear all state and re-seed 3 sample todos |
-| `mock-smoke` | CRUD smoke test (`smoke.sh`, needs `jq`) |
+| `mock-smoke` | CRUD smoke test (`scripts/smoke.sh`, needs `jq`; the backend runs the same script) |
 | `mock-fail-on` / `mock-fail-off` | Every `/api/v1/*` call returns a 500 problem / back to normal |
 | `mock-slow` / `mock-fast` | Global response delay (`MOCK_DELAY_MS`, default 2000) on / off |
 

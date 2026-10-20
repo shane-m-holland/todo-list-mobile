@@ -208,7 +208,9 @@ components:
       type: string
       minLength: 1
       maxLength: 200
-      pattern: '\S'
+      # Anchored-safe: JSON Schema searches for a match, Bean Validation (the Spring server) must
+      # match the whole string. This form means "contains a non-whitespace character" in both.
+      pattern: '^[\s\S]*\S[\s\S]*$'
       description: Short summary of the todo. Must contain at least one non-whitespace character.
 
     Notes:

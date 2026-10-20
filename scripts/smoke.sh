@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# End-to-end CRUD check against a running mock (or, later, the real backend).
+# End-to-end CRUD check against any server that implements the contract: the mock or the backend.
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080/api/v1}"

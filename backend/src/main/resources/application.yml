@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: todo-backend
+  jackson:
+    default-property-inclusion: non_null # absent notes are omitted, never null
+    deserialization:
+      fail-on-unknown-properties: true # the contract sets additionalProperties: false
+
+server:
+  port: ${SERVER_PORT:8081} # 8080 is the WireMock mock
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+todo:
+  seed:
+    enabled: true # sample todos at startup, same as `make mock-reset`
