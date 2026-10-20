@@ -40,6 +40,16 @@ make mock-up
 
 See [mock/README.md](mock/README.md) for the mock's targets (reset, smoke test, failure mode, delays).
 
+```bash
+make android-test
+```
+
+```bash
+make android-install
+```
+
+See [android/README.md](android/README.md) for the Android project layout.
+
 ## Roadmap
 
 1. **CP0** Repo bootstrap
