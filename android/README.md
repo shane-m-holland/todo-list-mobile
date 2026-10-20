@@ -11,6 +11,18 @@ Kotlin, Jetpack Compose, Hilt, Retrofit + OkHttp + kotlinx.serialization. AGP 9.
 
 `TodoJson` reuses the generated adapters but sets `encodeDefaults = false` and `explicitNulls = false`. The generated default sends `"title": null` on PATCH, which the contract rejects.
 
+## UI
+
+A single screen: `TodoListScreen` → `TodoListContent`. `TodoListContent` is stateless so UI tests can drive it directly.
+
+- The list has a checkbox to toggle a todo, tap to edit, and swipe right-to-left to delete. Pull to refresh reloads it.
+- The FAB opens `TodoEditorSheet`, a bottom sheet with title and notes. Save is disabled while the title is blank, and the contract's max lengths are enforced.
+- `TodoListViewModel` keeps a single `TodoListUiState`:
+  - `list` is `Loading`, `Loaded` or `Failed`. Failed is the full-screen error with Retry.
+  - `isRefreshing` tracks pull-to-refresh.
+  - `message` is a one-shot snackbar carrying a retryable `Operation`.
+- Toggle and delete update the list immediately and revert if the server call fails. Create and edit wait for the server, since it assigns ids and timestamps. Deleting something that's already gone (404) counts as success.
+
 ## Flavors
 
 | Flavor | Base URL | Notes |
@@ -22,7 +34,8 @@ A `local` flavor (Spring Boot backend) comes with CP5. Cleartext HTTP is allowed
 ## Tests
 
 - `:core:network:test` checks JSON encoding and decoding of the generated models.
-- `:app:testMockDebugUnitTest` runs `NetworkTodoRepository` against OkHttp MockWebServer. The response and request bodies come from `components.examples` in the contract (`ContractExamples`), so contract edits that break the client fail here.
+- `:app:testMockDebugUnitTest` runs `NetworkTodoRepository` against OkHttp MockWebServer. The response and request bodies come from `components.examples` in the contract (`ContractExamples`), so contract edits that break the client fail here. It also covers `TodoListViewModel` against `FakeTodoRepository` (Turbine plus a test dispatcher): optimistic updates, rollback, retry and refresh.
+- `:app:connectedMockDebugAndroidTest` runs Compose UI tests for `TodoListContent` (add flow, edit, toggle, empty state). It needs a running emulator.
 
 ## Running from Android Studio
 

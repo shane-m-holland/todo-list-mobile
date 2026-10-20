@@ -4,9 +4,9 @@ Proof-of-concept sandbox for trying out development and workflow techniques with
 
 | Part | Path | Stack | Status |
 |---|---|---|---|
-| API contract | `contract/` | OpenAPI 3.1 | MVP |
-| Mock API | `mock/` | WireMock (container) | MVP |
-| Android client | `android/` | Kotlin, Compose, Retrofit, Hilt | MVP |
+| API contract | `contract/` | OpenAPI 3.1 | Done |
+| Mock API | `mock/` | WireMock (container) | Done |
+| Android client | `android/` | Kotlin, Compose, Retrofit, Hilt | MVP done (mock backend) |
 | Backend API | `backend/` | Kotlin, Spring Boot 3 | Planned |
 | iOS client | `ios/` | Swift, SwiftUI | Planned |
 
@@ -52,11 +52,11 @@ See [android/README.md](android/README.md) for the Android project layout.
 
 ## Roadmap
 
-1. **CP0** Repo bootstrap
-2. **CP1** API contract
-3. **CP2** WireMock mock API
-4. **CP3** Android skeleton + generated client
-5. **CP4** Android UI (MVP complete)
+1. **CP0** Repo bootstrap ✅
+2. **CP1** API contract ✅
+3. **CP2** WireMock mock API ✅
+4. **CP3** Android skeleton + generated client ✅
+5. **CP4** Android UI (MVP complete) ✅
 6. **CP5** Spring Boot backend
 7. **CP6** iOS client
 8. **CP7** CI and contract breaking-change checks

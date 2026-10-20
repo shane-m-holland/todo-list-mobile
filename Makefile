@@ -81,6 +81,8 @@ mock-fast: ## Remove the global response delay
 # Gradle needs JDK 17+; 21 is the tested version. Override for a non-Homebrew JDK.
 JDK21_HOME ?= /opt/homebrew/opt/openjdk@21
 GRADLE := cd android && JAVA_HOME=$(JDK21_HOME) ./gradlew --console=plain
+ANDROID_SDK ?= $(or $(ANDROID_HOME),$(HOME)/Library/Android/sdk)
+ADB ?= $(ANDROID_SDK)/platform-tools/adb
 
 .PHONY: android-build
 android-build: ## Assemble the mockDebug APK (regenerates the API client from the contract)
@@ -90,7 +92,11 @@ android-build: ## Assemble the mockDebug APK (regenerates the API client from th
 android-test: ## Run Android unit tests (network module + app repository)
 	$(GRADLE) :core:network:test :app:testMockDebugUnitTest
 
+.PHONY: android-ui-test
+android-ui-test: ## Run Compose UI tests on the running emulator
+	$(GRADLE) :app:connectedMockDebugAndroidTest
+
 .PHONY: android-install
 android-install: ## Install and launch mockDebug on the running emulator
 	$(GRADLE) :app:installMockDebug
-	adb shell am start -n com.example.todo.mock/com.example.todo.MainActivity
+	$(ADB) shell am start -n com.example.todo.mock/com.example.todo.MainActivity
