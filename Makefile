@@ -167,3 +167,21 @@ E2E_DRIVER ?= adb
 e2e-android: ## Android journey against a real server (E2E_TARGET=memory|postgres|mock, E2E_DRIVER=adb|maestro, E2E_PUBLISH=1 refreshes docs/e2e)
 	@E2E_TARGET=$(E2E_TARGET) E2E_DRIVER=$(E2E_DRIVER) E2E_PUBLISH=$(E2E_PUBLISH) JDK21_HOME=$(JDK21_HOME) CONTAINER=$(CONTAINER) \
 		scripts/e2e/android-journey.sh
+
+# --- iOS ---------------------------------------------------------------------
+
+# Needs Xcode with the iOS platform matching its SDK installed (Xcode > Settings > Components).
+# Override IOS_DEST for another simulator, e.g. IOS_DEST='platform=iOS Simulator,name=iPhone 16e'.
+IOS_DEST ?= platform=iOS Simulator,name=iPhone 17
+IOS_DERIVED ?= $(CURDIR)/ios/build/DerivedData
+# The OpenAPI generator is a SwiftPM build-tool plugin; skip the interactive trust prompt.
+XCODEBUILD := xcodebuild -destination '$(IOS_DEST)' -derivedDataPath $(IOS_DERIVED) \
+	-skipPackagePluginValidation -skipMacroValidation
+
+.PHONY: ios-build
+ios-build: ## Build the iOS app for the simulator (generates the API client from the contract)
+	$(XCODEBUILD) -project ios/Todo.xcodeproj -scheme Todo -configuration Debug build
+
+.PHONY: ios-test
+ios-test: ## Run iOS unit tests (view model + repository) on a simulator
+	cd ios/TodoKit && $(XCODEBUILD) -scheme TodoKit test
