@@ -155,3 +155,13 @@ db-down: ## Stop the local PostgreSQL container (data is kept)
 .PHONY: db-reset
 db-reset: ## Stop PostgreSQL and delete its data volume
 	$(DB_COMPOSE) down -v
+
+# --- End-to-end journey ------------------------------------------------------------------------------
+
+# memory | postgres | mock. The journey boots the emulator if none is running.
+E2E_TARGET ?= memory
+
+.PHONY: e2e-android
+e2e-android: ## Android journey against a real server (E2E_TARGET=memory|postgres|mock; E2E_PUBLISH=1 refreshes docs/e2e)
+	@E2E_TARGET=$(E2E_TARGET) E2E_PUBLISH=$(E2E_PUBLISH) JDK21_HOME=$(JDK21_HOME) CONTAINER=$(CONTAINER) \
+		scripts/e2e/android-journey.sh

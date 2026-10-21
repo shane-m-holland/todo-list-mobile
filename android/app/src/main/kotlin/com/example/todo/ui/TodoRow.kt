@@ -21,6 +21,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -71,7 +73,10 @@ fun TodoRow(
                 Checkbox(
                     checked = todo.completed,
                     onCheckedChange = onCompletedChange,
-                    modifier = Modifier.testTag("todo_checkbox_${todo.id}"),
+                    modifier = Modifier
+                        .testTag("todo_checkbox_${todo.id}")
+                        // Without a label a screen reader (and the e2e journey) can't tell the checkboxes apart.
+                        .semantics { contentDescription = "Complete ${todo.title}" },
                 )
             },
             headlineContent = {

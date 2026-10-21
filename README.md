@@ -62,6 +62,12 @@ Add `ANDROID_FLAVOR=local` to `make android-install` or `make android-build` to 
 
 See [android/README.md](android/README.md) for the Android project layout.
 
+```bash
+make e2e-android
+```
+
+Runs the whole user journey (create, complete, close, reopen, delete) on an emulator against a real server and writes a Markdown report with screenshots; see [scripts/e2e/README.md](scripts/e2e/README.md). The latest published run is in [docs/e2e/android-journey/](docs/e2e/android-journey/README.md).
+
 ## Roadmap
 
 1. **CP0** Repo bootstrap ✅
