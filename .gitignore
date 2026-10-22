@@ -25,3 +25,6 @@ xcuserdata/
 
 # Node tooling (contract linting, if run locally)
 node_modules/
+
+# Output of a Java IDE / language server (Eclipse, VS Code)
+backend/bin/

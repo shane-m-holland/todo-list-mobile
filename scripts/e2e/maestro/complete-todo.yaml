@@ -1,0 +1,9 @@
+# Tick the todo's checkbox and expect it to show as checked.
+appId: ${APP_ID}
+---
+- tapOn: "Complete ${TITLE_RE}"
+- extendedWaitUntil:
+    visible:
+      text: "Complete ${TITLE_RE}"
+      checked: true
+    timeout: 10000

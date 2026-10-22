@@ -1,17 +1,29 @@
 #!/usr/bin/env bash
 # End-to-end journey: real backend + the Android app on an emulator, driven like a user would.
 #
-#   scripts/e2e/android-journey.sh                    # in-memory backend (default)
+#   scripts/e2e/android-journey.sh                       # in-memory backend, adb driver (defaults)
 #   E2E_TARGET=postgres scripts/e2e/android-journey.sh   # Postgres backend, restarted mid-journey
 #   E2E_TARGET=mock     scripts/e2e/android-journey.sh   # the WireMock mock instead of the backend
-#   E2E_PUBLISH=1 ...                                 # on success, refresh docs/e2e/android-journey/
+#   E2E_DRIVER=maestro  scripts/e2e/android-journey.sh   # drive the screen with Maestro instead of adb
+#   E2E_PUBLISH=1 ...                                    # on success, refresh the published report in docs/e2e/
 #
-# After every step it checks the screen AND the server. Writes build/e2e/<run>/journey.md with
-# screenshots, the backend's state after each step, and the result. Exit code 0 only if every check passed.
+# This script owns everything except the screen: backend lifecycle, resetting data, the server checks
+# and the report. A "driver" (driver-adb.sh or driver-maestro.sh) owns the screen: tapping, typing,
+# swiping and asserting what is shown. After every step it checks the screen AND the server. Writes
+# build/e2e/<run>/journey.md with screenshots, the backend's state after each step and the result.
+# Exit code 0 only if every check passed.
 set -euo pipefail
 
 # shellcheck source=lib.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+
+DRIVER="${E2E_DRIVER:-adb}"
+case "$DRIVER" in
+  adb | maestro) ;;
+  *) die "E2E_DRIVER must be adb or maestro (got '$DRIVER')" ;;
+esac
+# shellcheck source=/dev/null
+source "$E2E_DIR/driver-$DRIVER.sh"
 
 TARGET="${E2E_TARGET:-memory}"
 case "$TARGET" in
@@ -24,7 +36,7 @@ APP_ID="com.example.todo.$FLAVOR"
 API="http://localhost:$PORT/api/v1"
 MOCK_ADMIN="http://localhost:8080/__admin"
 
-RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$TARGET"
+RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$TARGET-$DRIVER"
 OUT="$ROOT/build/e2e/$RUN_ID"
 BODY="$OUT/body.md"
 mkdir -p "$OUT/raw" "$OUT/img"
@@ -93,9 +105,10 @@ write_report() {
     echo "| **Checks passed** | $CHECKS |"
     echo "| **Server** | $(describe_target) |"
     echo "| **App** | \`$APP_ID\` (debug) on ${device:-?}, Android ${android_version:-?} |"
+    echo "| **Screen driver** | $DRIVER_NAME |"
     echo "| **Run** | $STARTED_AT, ${elapsed}s, commit \`$sha\`$dirty |"
     echo
-    echo "Re-run: \`make e2e-android\` (also \`E2E_TARGET=postgres\` or \`mock\`, and \`E2E_PUBLISH=1\` to refresh this page)."
+    echo "Re-run: \`make e2e-android\` (also \`E2E_TARGET=postgres\` or \`mock\`, \`E2E_DRIVER=maestro\`, and \`E2E_PUBLISH=1\` to refresh this page)."
     cat "$BODY"
   } > "$OUT/journey.md"
 }
@@ -126,6 +139,7 @@ trap finish EXIT
 
 publish_docs() {
   local dest="$ROOT/docs/e2e/android-journey"
+  if [[ "$DRIVER" != adb ]]; then dest="$dest-$DRIVER"; fi
   rm -rf "$dest"; mkdir -p "$dest"
   cp -R "$OUT/img" "$dest/img"
   cp "$OUT/journey.md" "$dest/README.md"
@@ -168,6 +182,7 @@ restore_animations() {
 # ---- setup -------------------------------------------------------------------------------------------------
 section "Setup"
 for tool in curl jq python3 sips; do command -v "$tool" > /dev/null || die "$tool is required"; done
+driver_check
 [[ -x "$ADB" ]] || die "adb not found at $ADB (set ANDROID_SDK)"
 [[ -x "$JDK21_HOME/bin/java" ]] || die "no JDK 21 at $JDK21_HOME (set JDK21_HOME)"
 
@@ -197,7 +212,7 @@ log "Building and installing the app ($FLAVOR flavor)"
   || die "app build/install failed (see $OUT/build-android.log)"
 disable_animations
 "$ADB" shell pm clear "$APP_ID" > /dev/null
-md "- Emulator ready, animations off, app data cleared (\`pm clear\`), \`$APP_ID\` freshly installed."
+md "- Emulator ready, animations off, app data cleared (\`pm clear\`), \`$APP_ID\` freshly installed. Screen driver: $DRIVER_NAME."
 md "- The server starts **empty** (seeding off), so the list holds exactly what this journey creates."
 
 # ---- the journey -------------------------------------------------------------------------------------------
@@ -220,42 +235,35 @@ expect_eq "The server starts with no todos" 0 "$(server_count)"
 snapshot_md
 
 step 2 "Start the Android app" "Launches the app on the emulator."
-app_start
-wait_for 30 ui_exists --desc "Add todo" || fail "the app did not reach its main screen"
-wait_for 10 ui_exists --text-re "Nothing to do yet" || fail "the empty-state hint never appeared"
-pass "The app is running and shows its empty state"
-assert_open_count
-assert_ui_matches_server "Step 2"
+drv_launch_empty
+drv_assert_screen "Step 2"
 shot launched "The app on first launch: empty list"
 
 step 3 "Create a task: Walk the dog" "Taps +, types the title, taps Save."
-add_todo "Walk the dog"
+drv_add_todo "Walk the dog"
 expect_eq "The server has the todo" "Walk the dog" "$(server_titles)"
 expect_eq "It starts not completed" false "$(server_field "Walk the dog" completed)"
-assert_open_count
+drv_assert_screen "Step 3"
 shot walk-the-dog "Walk the dog added"
 snapshot_md
 
 step 4 "Create a task: Grocery shopping" "Same again."
-add_todo "Grocery shopping"
+drv_add_todo "Grocery shopping"
 expect_eq "The server has both, in creation order" "Walk the dog, Grocery shopping" "$(server_titles)"
-assert_ui_matches_server "Step 4"
-assert_open_count
+drv_assert_screen "Step 4"
 shot grocery-shopping "Both todos listed"
 snapshot_md
 
 step 5 "Complete a task: Walk the dog" "Taps the checkbox next to it."
-complete_todo "Walk the dog"
+drv_complete_todo "Walk the dog"
 expect_eq "The server marks it completed" true "$(server_field "Walk the dog" completed)"
 expect_eq "Grocery shopping is untouched" false "$(server_field "Grocery shopping" completed)"
-assert_open_count
+drv_assert_screen "Step 5"
 shot walk-completed "Walk the dog completed"
 snapshot_md
 
 step 6 "Close the app" "Force-stops the process, so nothing in memory survives."
-app_stop
-wait_for 5 app_gone || fail "the app process is still alive"
-pass "The app process is gone"
+drv_close
 # While the app is closed, change something it could not know about, so step 7 can only pass
 # if the app really fetches from the server.
 WALK_ID=$(server_id "Walk the dog")
@@ -273,45 +281,37 @@ shot app-closed "Launcher with the app closed"
 snapshot_md
 
 step 7 "Open the app" "Cold start. The state must come from the server."
-app_start
-wait_for 30 ui_exists --desc "Complete Grocery shopping" || fail "the todos did not load after reopening"
-expect_eq "Walk the dog is still completed" true "$("${UI[@]}" rows | jq -r '.[] | select(.title == "Walk the dog") | .completed')"
-if wait_for 10 ui_exists --text "$GROCERY_NOTE"; then
-  pass "The note that was added on the server (and never seen by the app) is on screen"
-else
-  fail "the server-side note is not on screen: the app is not reading from the server"
-fi
-assert_ui_matches_server "Step 7"
-assert_open_count
+drv_launch_with "Grocery shopping"
+expect_eq "On the server, Walk the dog is still completed" true "$(server_field "Walk the dog" completed)"
+drv_assert_screen "Step 7"
+pass "The note that was edited on the server (and never seen by the app) is on screen: it is part of the match above"
 shot reopened "App reopened with state from the server"
 
 step 8 "Delete the Walk the dog task" "Swipes the row away."
-delete_todo "Walk the dog"
+drv_delete_todo "Walk the dog"
 expect_eq "The server no longer lists it" "Grocery shopping" "$(server_titles)"
 expect_eq "Fetching it by id returns 404" 404 "$(curl -s -o /dev/null -w '%{http_code}' "$API/todos/$WALK_ID")"
-assert_ui_matches_server "Step 8"
+drv_assert_screen "Step 8"
 shot walk-deleted "Walk the dog deleted"
 snapshot_md
 
 step 9 "Complete the Grocery shopping task" "Taps its checkbox."
-complete_todo "Grocery shopping"
+drv_complete_todo "Grocery shopping"
 expect_eq "The server marks it completed" true "$(server_field "Grocery shopping" completed)"
-assert_open_count
+drv_assert_screen "Step 9"
 shot grocery-completed "Grocery shopping completed"
 snapshot_md
 
 step 10 "Add a task: Make dinner reservation" "Taps +, types the title, taps Save."
-add_todo "Make dinner reservation"
+drv_add_todo "Make dinner reservation"
 expect_eq "The server has both, in creation order" "Grocery shopping, Make dinner reservation" "$(server_titles)"
 expect_eq "The new one is not completed" false "$(server_field "Make dinner reservation" completed)"
-assert_open_count
+drv_assert_screen "Step 10"
 shot dinner-added "Make dinner reservation added"
 snapshot_md
 
 step 11 "Close the app" "Force-stops it again, then edits the server behind its back."
-app_stop
-wait_for 5 app_gone || fail "the app process is still alive"
-pass "The app process is gone"
+drv_close
 DINNER_ID=$(server_id "Make dinner reservation")
 DINNER_NOTE="Table for two at 7pm"
 curl -fsS -o /dev/null -X PATCH "$API/todos/$DINNER_ID" -H 'Content-Type: application/json' \
@@ -321,18 +321,12 @@ shot app-closed-again "Launcher with the app closed"
 snapshot_md
 
 step 12 "Open the app" "Cold start. Final state must match the server."
-app_start
-wait_for 30 ui_exists --desc "Complete Make dinner reservation" || fail "the todos did not load after reopening"
-if wait_for 10 ui_exists --text "$DINNER_NOTE"; then
-  pass "The server-side note is on screen"
-else
-  fail "the server-side note is not on screen: the app is not reading from the server"
-fi
-expect_eq "Grocery shopping is completed" true "$("${UI[@]}" rows | jq -r '.[] | select(.title == "Grocery shopping") | .completed')"
-expect_eq "Make dinner reservation is still open" false "$("${UI[@]}" rows | jq -r '.[] | select(.title == "Make dinner reservation") | .completed')"
-expect_eq "Walk the dog stays deleted" 0 "$("${UI[@]}" rows | jq '[.[] | select(.title == "Walk the dog")] | length')"
-assert_ui_matches_server "Step 12"
-assert_open_count
+drv_launch_with "Make dinner reservation"
+expect_eq "On the server, Grocery shopping is completed" true "$(server_field "Grocery shopping" completed)"
+expect_eq "On the server, Make dinner reservation is still open" false "$(server_field "Make dinner reservation" completed)"
+expect_eq "On the server, Walk the dog stays deleted" "Grocery shopping, Make dinner reservation" "$(server_titles)"
+drv_assert_screen "Step 12"
+pass "The note that was edited on the server (and never seen by the app) is on screen: it is part of the match above"
 shot final "Final state"
 snapshot_md
 
@@ -344,27 +338,15 @@ if [[ "$TARGET" == mock ]]; then
 else
   pass "Backend stopped: connections are refused"
 fi
-ui_pull_to_refresh
-if wait_for 20 ui_exists --text-re "Couldn't refresh"; then
-  pass "A refresh failure is reported in a snackbar"
-else
-  fail "no \"Couldn't refresh\" message after pulling to refresh with the server down"
-fi
-expect_eq "The list stays on screen instead of being wiped" 2 "$("${UI[@]}" rows | jq length)"
+drv_refresh_expect_message "Couldn't refresh" "A refresh failure is reported in a snackbar"
 shot server-down "Server down: the list stays, a message explains"
+drv_assert_row_count 2 "The list stays on screen instead of being wiped"
 server_fix
 pass "The server is back"
 if [[ "$TARGET" == memory ]]; then
   md "- ℹ️ The in-memory backend lost its data when it restarted, so it is empty now. That is expected for this profile."
 fi
-# The first pull can land while the previous snackbar is still animating out, so allow a few tries.
-recovered=0
-for attempt in 1 2 3; do
-  ui_pull_to_refresh
-  if wait_for 15 ui_matches_server; then recovered=1; break; fi
-done
-if [[ "$recovered" == 1 ]]; then pass "After one more pull to refresh the screen matches the server again"
-else fail "the app never recovered after the server came back"; fi
+drv_recover_screen "Recovery"
 shot recovered "Server back: screen matches again"
 snapshot_md
 

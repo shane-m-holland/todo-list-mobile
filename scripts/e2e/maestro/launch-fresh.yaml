@@ -1,0 +1,11 @@
+# First launch: wipe the app's data, start it, and expect the empty list.
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Add todo"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "(?s)Nothing to do yet.*"
+    timeout: 10000

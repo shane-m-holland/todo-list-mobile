@@ -160,8 +160,10 @@ db-reset: ## Stop PostgreSQL and delete its data volume
 
 # memory | postgres | mock. The journey boots the emulator if none is running.
 E2E_TARGET ?= memory
+# adb (no extra install) | maestro (brew install mobile-dev-inc/tap/maestro)
+E2E_DRIVER ?= adb
 
 .PHONY: e2e-android
-e2e-android: ## Android journey against a real server (E2E_TARGET=memory|postgres|mock; E2E_PUBLISH=1 refreshes docs/e2e)
-	@E2E_TARGET=$(E2E_TARGET) E2E_PUBLISH=$(E2E_PUBLISH) JDK21_HOME=$(JDK21_HOME) CONTAINER=$(CONTAINER) \
+e2e-android: ## Android journey against a real server (E2E_TARGET=memory|postgres|mock, E2E_DRIVER=adb|maestro, E2E_PUBLISH=1 refreshes docs/e2e)
+	@E2E_TARGET=$(E2E_TARGET) E2E_DRIVER=$(E2E_DRIVER) E2E_PUBLISH=$(E2E_PUBLISH) JDK21_HOME=$(JDK21_HOME) CONTAINER=$(CONTAINER) \
 		scripts/e2e/android-journey.sh

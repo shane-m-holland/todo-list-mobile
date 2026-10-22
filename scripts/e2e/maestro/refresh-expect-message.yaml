@@ -1,0 +1,9 @@
+# Pull to refresh and expect a message (the snackbar) that starts with MSG_RE.
+appId: ${APP_ID}
+---
+- swipe:
+    start: 50%, 25%
+    end: 50%, 65%
+- extendedWaitUntil:
+    visible: "${MSG_RE}.*"
+    timeout: 20000

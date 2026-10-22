@@ -1,0 +1,7 @@
+# Cold start of an app that already has data on the server. WAIT_RE is a title that must load.
+appId: ${APP_ID}
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Complete ${WAIT_RE}"
+    timeout: 30000

@@ -36,7 +36,7 @@ Both can be installed side by side. `make android-install ANDROID_FLAVOR=local` 
 
 - `:core:network:test` checks JSON encoding and decoding of the generated models.
 - `:app:testMockDebugUnitTest` runs `NetworkTodoRepository` against OkHttp MockWebServer. The response and request bodies come from `components.examples` in the contract (`ContractExamples`), so contract edits that break the client fail here. It also covers `TodoListViewModel` against `FakeTodoRepository` (Turbine plus a test dispatcher): optimistic updates, rollback, retry and refresh.
-- `make e2e-android` (repo root) is the full-stack check: the real app and a real server, with a report. See `scripts/e2e/README.md`.
+- `make e2e-android` (repo root) is the full-stack check: the real app and a real server, with a report, driven by `adb` or Maestro (`E2E_DRIVER=maestro`). See `scripts/e2e/README.md`.
 - `:app:connectedMockDebugAndroidTest` runs Compose UI tests for `TodoListContent` (add flow, edit, toggle, empty state). It needs a running emulator.
 
 ## Running from Android Studio

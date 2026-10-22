@@ -1,0 +1,12 @@
+# Tap +, type a title, Save, and expect the new row. TITLE is typed, TITLE_RE is the same text as a regex.
+appId: ${APP_ID}
+---
+- tapOn: "Add todo"
+- extendedWaitUntil:
+    visible: "New todo"
+    timeout: 10000
+- inputText: "${TITLE}"
+- tapOn: "Save"
+- extendedWaitUntil:
+    visible: "Complete ${TITLE_RE}"
+    timeout: 10000

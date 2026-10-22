@@ -1,0 +1,10 @@
+# Swipe the todo's row to the left (swipe-to-delete) and expect it to be gone.
+appId: ${APP_ID}
+---
+- swipe:
+    from:
+      text: "${TITLE_RE}"
+    direction: LEFT
+- extendedWaitUntil:
+    notVisible: "Complete ${TITLE_RE}"
+    timeout: 10000

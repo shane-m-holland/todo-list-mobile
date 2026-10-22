@@ -1,0 +1,4 @@
+# Force-stop the app, keeping its data.
+appId: ${APP_ID}
+---
+- stopApp

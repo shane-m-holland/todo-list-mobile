@@ -1,0 +1,6 @@
+# Pull the list down to refresh it.
+appId: ${APP_ID}
+---
+- swipe:
+    start: 50%, 25%
+    end: 50%, 65%

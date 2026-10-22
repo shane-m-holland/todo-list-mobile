@@ -66,7 +66,7 @@ See [android/README.md](android/README.md) for the Android project layout.
 make e2e-android
 ```
 
-Runs the whole user journey (create, complete, close, reopen, delete) on an emulator against a real server and writes a Markdown report with screenshots; see [scripts/e2e/README.md](scripts/e2e/README.md). The latest published run is in [docs/e2e/android-journey/](docs/e2e/android-journey/README.md).
+Runs the whole user journey (create, complete, close, reopen, delete) on an emulator against a real server and writes a Markdown report with screenshots; see [scripts/e2e/README.md](scripts/e2e/README.md). The screen can be driven with `adb` (default) or [Maestro](https://github.com/mobile-dev-inc/maestro) (`make e2e-android E2E_DRIVER=maestro`). The latest published runs are in [docs/e2e/android-journey/](docs/e2e/android-journey/README.md) (`adb`) and [docs/e2e/android-journey-maestro/](docs/e2e/android-journey-maestro/README.md) (Maestro). General guidance for making apps drivable and verifiable by agents is in [ai-mobile-validation-guidelines.md](ai-mobile-validation-guidelines.md).
 
 ## Roadmap
 
